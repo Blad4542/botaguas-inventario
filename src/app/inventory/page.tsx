@@ -131,6 +131,27 @@ export default function InventoryPage() {
     item: Omit<InventoryItem, "id"> | InventoryItem
   ) => {
     let error;
+
+    // Verificar si el número de molde ya existe en la base de datos
+    const { data: existingItem, error: fetchError } = await supabase
+      .from("botaguas")
+      .select("mold_number")
+      .eq("mold_number", item.mold_number)
+      .single();
+
+    if (fetchError && fetchError.code !== "PGRST116") {
+      // código que indica que no se encontró el registro
+      console.error("Error fetching existing item:", fetchError.message);
+      return;
+    }
+
+    if (existingItem && (!item.id || existingItem.id !== item.id)) {
+      alert(
+        `El número de molde ${item.mold_number} ya existe. Por favor, ingresa un número de molde diferente.`
+      );
+      return;
+    }
+
     if ("id" in item && item.id) {
       // Actualización
       const { error: updateError } = await supabase
@@ -156,7 +177,7 @@ export default function InventoryPage() {
     } else {
       fetchInventory();
       setIsModalOpen(false);
-      setItemToEdit(null);
+      setItemToEdit(null); // Reiniciar item en edición después de crear o actualizar
     }
   };
 
