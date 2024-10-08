@@ -1,4 +1,3 @@
-// src/components/InventoryForm.tsx
 import { useState, useEffect } from "react";
 
 interface InventoryItem {
@@ -14,17 +13,17 @@ interface InventoryItem {
   mold_number: string;
 }
 
-interface InventoryFormProps {
+interface AddInventoryFormProps {
   onSubmit: (item: InventoryItem) => void;
   onClose: () => void;
-  item?: InventoryItem; // Item opcional para editar
+  item?: InventoryItem;
 }
 
-export default function InventoryForm({
+export default function AddInventoryForm({
   onSubmit,
   onClose,
   item,
-}: InventoryFormProps) {
+}: AddInventoryFormProps) {
   const [formData, setFormData] = useState<InventoryItem>({
     brand: "",
     model: "",
@@ -66,15 +65,27 @@ export default function InventoryForm({
       return;
     }
     onSubmit(formData);
+    setFormData({
+      brand: "",
+      model: "",
+      year_start: 0,
+      year_end: 0,
+      doors: 4,
+      type: "",
+      quantity: 0,
+      description: "",
+      mold_number: "",
+    });
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10 p-4 sm:p-8">
+      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-screen overflow-y-auto">
         <h2 className="text-xl font-semibold text-center text-blue-600 mb-4">
-          {item ? "Actualizar Item" : "Crear Nuevo Item"}
+          {item ? "Actualizar Item" : "Agregar Nuevo Item"}
         </h2>
         <form className="space-y-4">
+          <label className="block text-gray-700">Marca</label>
           <input
             name="brand"
             placeholder="Marca"
@@ -82,6 +93,8 @@ export default function InventoryForm({
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+
+          <label className="block text-gray-700">Modelo</label>
           <input
             name="model"
             placeholder="Modelo"
@@ -89,6 +102,8 @@ export default function InventoryForm({
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+
+          <label className="block text-gray-700">Desde</label>
           <input
             type="number"
             name="year_start"
@@ -97,6 +112,8 @@ export default function InventoryForm({
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+
+          <label className="block text-gray-700">Hasta</label>
           <input
             type="number"
             name="year_end"
@@ -105,6 +122,8 @@ export default function InventoryForm({
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+
+          <label className="block text-gray-700">Puertas</label>
           <input
             type="number"
             name="doors"
@@ -113,6 +132,8 @@ export default function InventoryForm({
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+
+          <label className="block text-gray-700">Tipo</label>
           <select
             name="type"
             value={formData.type}
@@ -123,6 +144,8 @@ export default function InventoryForm({
             <option value="Parche">Parche</option>
             <option value="Empotrar">Empotrar</option>
           </select>
+
+          <label className="block text-gray-700">Disponibles</label>
           <input
             type="number"
             name="quantity"
@@ -131,6 +154,8 @@ export default function InventoryForm({
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+
+          <label className="block text-gray-700">Descripción</label>
           <textarea
             name="description"
             placeholder="Descripción"
@@ -138,6 +163,8 @@ export default function InventoryForm({
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+
+          <label className="block text-gray-700">Número de Molde</label>
           <input
             name="mold_number"
             placeholder="Número de Molde"
@@ -146,7 +173,7 @@ export default function InventoryForm({
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </form>
-        <div className="flex justify-end mt-4 space-x-2">
+        <div className="flex flex-col sm:flex-row justify-end mt-4 space-y-2 sm:space-y-0 sm:space-x-2">
           <button
             onClick={onClose}
             className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
@@ -157,7 +184,7 @@ export default function InventoryForm({
             onClick={handleSubmit}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
-            {item ? "Actualizar" : "Crear"}
+            {item ? "Actualizar" : "Agregar"}
           </button>
         </div>
       </div>

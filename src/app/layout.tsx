@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -12,7 +11,7 @@ export default function RootLayout({
 }) {
   useEffect(() => {
     const handleBeforeUnload = () => {
-      supabase.auth.signOut(); // Cierra la sesión antes de cerrar la pestaña
+      supabase.auth.signOut();
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);

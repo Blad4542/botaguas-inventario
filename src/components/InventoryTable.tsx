@@ -1,4 +1,3 @@
-// src/components/InventoryTable.tsx
 import { useMemo } from "react";
 import { useTable } from "react-table";
 

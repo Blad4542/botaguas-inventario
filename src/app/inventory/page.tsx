@@ -1,4 +1,3 @@
-// src/app/inventory/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -112,7 +111,7 @@ export default function InventoryPage() {
     }
 
     setFilteredInventory(filtered);
-    setCurrentPage(1); // Reinicia a la primera página al aplicar filtros
+    setCurrentPage(1);
   };
 
   const handleClearFilters = () => {
@@ -120,7 +119,7 @@ export default function InventoryPage() {
     setSelectedModel("");
     setSelectedYear("");
     setFilteredInventory(inventory);
-    setCurrentPage(1); // Reinicia a la primera página al limpiar filtros
+    setCurrentPage(1);
   };
 
   const handleLogout = async () => {
@@ -157,7 +156,7 @@ export default function InventoryPage() {
     } else {
       fetchInventory();
       setIsModalOpen(false);
-      setItemToEdit(null); // Reiniciar item en edición después de crear o actualizar
+      setItemToEdit(null);
     }
   };
 
@@ -220,9 +219,9 @@ export default function InventoryPage() {
           onSubmit={handleAddOrUpdateItem}
           onClose={() => {
             setIsModalOpen(false);
-            setItemToEdit(null); // Reiniciar el item en edición al cerrar el modal
+            setItemToEdit(null);
           }}
-          item={itemToEdit} // Pasar el item en edición al formulario
+          item={itemToEdit}
         />
       )}
 

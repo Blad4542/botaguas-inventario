@@ -1,4 +1,3 @@
-// src/app/page.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -12,7 +11,7 @@ export default function HomePage() {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
-        router.push("/login"); // Redirige al login si no hay sesión
+        router.push("/login");
       }
     };
     checkSession();
