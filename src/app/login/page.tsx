@@ -92,17 +92,6 @@ export default function LoginPage() {
             Iniciar sesión
           </button>
         </form>
-        <div className="text-center mt-4">
-          <a href="#" className="text-sm text-blue-500 hover:underline">
-            ¿Olvidaste tu contraseña?
-          </a>
-        </div>
-        <div className="text-center mt-2 text-sm text-gray-600">
-          ¿No tienes una cuenta?{" "}
-          <a href="#" className="text-blue-500 hover:underline">
-            Regístrate
-          </a>
-        </div>
       </div>
     </div>
   );

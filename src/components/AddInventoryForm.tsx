@@ -1,10 +1,12 @@
-// src/components/AddInventoryForm.tsx
-import { useState } from "react";
-import { supabase } from "../../supabaseClient";
+// src/components/InventoryForm.tsx
+import { useState, useEffect } from "react";
 
 interface InventoryItem {
+  id?: number;
   brand: string;
   model: string;
+  year_start: number;
+  year_end: number;
   doors: number;
   type: string;
   quantity: number;
@@ -12,18 +14,22 @@ interface InventoryItem {
   mold_number: string;
 }
 
-interface AddInventoryFormProps {
-  onSubmit: (item: InventoryItem) => void; // Cambiado para aceptar el objeto item
+interface InventoryFormProps {
+  onSubmit: (item: InventoryItem) => void;
   onClose: () => void;
+  item?: InventoryItem; // Item opcional para editar
 }
 
-export default function AddInventoryForm({
+export default function InventoryForm({
   onSubmit,
   onClose,
-}: AddInventoryFormProps) {
-  const [newItem, setNewItem] = useState<InventoryItem>({
+  item,
+}: InventoryFormProps) {
+  const [formData, setFormData] = useState<InventoryItem>({
     brand: "",
     model: "",
+    year_start: 0,
+    year_end: 0,
     doors: 4,
     type: "",
     quantity: 0,
@@ -31,82 +37,85 @@ export default function AddInventoryForm({
     mold_number: "",
   });
 
+  useEffect(() => {
+    if (item) {
+      setFormData(item);
+    }
+  }, [item]);
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
     const { name, value } = e.target;
-    setNewItem((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleAddItem = () => {
-    // Validación simple para campos obligatorios
+  const handleSubmit = () => {
     if (
-      !newItem.brand ||
-      !newItem.model ||
-      !newItem.doors ||
-      !newItem.type ||
-      !newItem.quantity ||
-      !newItem.mold_number
+      !formData.brand ||
+      !formData.model ||
+      !formData.year_start ||
+      !formData.year_end ||
+      !formData.doors ||
+      !formData.quantity ||
+      !formData.mold_number
     ) {
       alert("Todos los campos (excepto Descripción) son obligatorios");
       return;
     }
-
-    onSubmit(newItem); // Pasa el item al método onSubmit del padre
-    setNewItem({
-      brand: "",
-      model: "",
-      doors: 4,
-      type: "",
-      quantity: 0,
-      description: "",
-      mold_number: "",
-    }); // Limpia el formulario después de agregar el ítem
+    onSubmit(formData);
   };
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-xl font-semibold text-center text-blue-600 mb-4">
-          Agregar Nuevo Item
+          {item ? "Actualizar Item" : "Crear Nuevo Item"}
         </h2>
         <form className="space-y-4">
           <input
             name="brand"
             placeholder="Marca"
-            value={newItem.brand}
+            value={formData.brand}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <input
             name="model"
             placeholder="Modelo"
-            value={newItem.model}
+            value={formData.model}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-
-          <label
-            htmlFor="doors"
-            className="block text-sm font-semibold text-gray-600"
-          >
-            Puertas
-          </label>
+          <input
+            type="number"
+            name="year_start"
+            placeholder="Año Inicio"
+            value={formData.year_start}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            type="number"
+            name="year_end"
+            placeholder="Año Fin"
+            value={formData.year_end}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
           <input
             type="number"
             name="doors"
-            id="doors"
             placeholder="Puertas"
-            value={newItem.doors}
+            value={formData.doors}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-
           <select
             name="type"
-            value={newItem.type}
+            value={formData.type}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
@@ -114,34 +123,25 @@ export default function AddInventoryForm({
             <option value="Parche">Parche</option>
             <option value="Empotrar">Empotrar</option>
           </select>
-
-          <label
-            htmlFor="quantity"
-            className="block text-sm font-semibold text-gray-600"
-          >
-            Disponible
-          </label>
           <input
             type="number"
             name="quantity"
-            id="quantity"
             placeholder="Cantidad"
-            value={newItem.quantity}
+            value={formData.quantity}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-
           <textarea
             name="description"
             placeholder="Descripción"
-            value={newItem.description}
+            value={formData.description}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-          ></textarea>
+          />
           <input
             name="mold_number"
             placeholder="Número de Molde"
-            value={newItem.mold_number}
+            value={formData.mold_number}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
@@ -154,10 +154,10 @@ export default function AddInventoryForm({
             Cancelar
           </button>
           <button
-            onClick={handleAddItem}
+            onClick={handleSubmit}
             className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
           >
-            Agregar
+            {item ? "Actualizar" : "Crear"}
           </button>
         </div>
       </div>

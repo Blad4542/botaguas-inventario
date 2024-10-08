@@ -5,11 +5,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../supabaseClient";
 import { useRouter } from "next/navigation";
 import AddInventoryForm from "@/components/AddInventoryForm";
+import InventoryTable from "@/components/InventoryTable";
 
 interface InventoryItem {
   id: number;
   brand: string;
   model: string;
+  year_start: number;
+  year_end: number;
   doors: number;
   type: string;
   quantity: number;
@@ -17,10 +20,22 @@ interface InventoryItem {
   mold_number: string;
 }
 
+const ITEMS_PER_PAGE = 25;
+
 export default function InventoryPage() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [filteredInventory, setFilteredInventory] = useState<InventoryItem[]>(
+    []
+  );
+  const [brands, setBrands] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
+  const [years, setYears] = useState<number[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<string>("");
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<number | "">("");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1); // Estado para la página actual
   const router = useRouter();
 
   useEffect(() => {
@@ -29,7 +44,7 @@ export default function InventoryPage() {
       if (!data.session) {
         router.push("/login");
       } else {
-        fetchInventory();
+        await fetchInventory();
       }
       setLoading(false);
     };
@@ -37,12 +52,74 @@ export default function InventoryPage() {
   }, [router]);
 
   const fetchInventory = async () => {
-    const { data, error } = await supabase.from("botaguas").select("*");
-    if (error) {
-      console.error("Error fetching inventory:", error.message);
-    } else {
-      setInventory(data as InventoryItem[]);
+    try {
+      const { data, error } = await supabase.from("botaguas").select("*");
+      if (error) {
+        console.error("Error fetching inventory:", error.message);
+      } else if (data) {
+        setInventory(data as InventoryItem[]);
+        setFilteredInventory(data as InventoryItem[]);
+        extractFilters(data as InventoryItem[]);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
     }
+  };
+
+  const extractFilters = (data: InventoryItem[]) => {
+    const uniqueBrands = Array.from(new Set(data.map((item) => item.brand)));
+    const uniqueModels = Array.from(new Set(data.map((item) => item.model)));
+    const uniqueYears = Array.from(
+      new Set(data.flatMap((item) => [item.year_start, item.year_end]))
+    ).sort((a, b) => b - a);
+    setBrands(uniqueBrands);
+    setModels(uniqueModels);
+    setYears(uniqueYears);
+  };
+
+  const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const brand = e.target.value;
+    setSelectedBrand(brand);
+    filterData(brand, selectedModel, selectedYear);
+  };
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const model = e.target.value;
+    setSelectedModel(model);
+    filterData(selectedBrand, model, selectedYear);
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const year = e.target.value ? parseInt(e.target.value, 10) : "";
+    setSelectedYear(year);
+    filterData(selectedBrand, selectedModel, year);
+  };
+
+  const filterData = (brand: string, model: string, year: number | "") => {
+    let filtered = inventory;
+
+    if (brand) {
+      filtered = filtered.filter((item) => item.brand === brand);
+    }
+    if (model) {
+      filtered = filtered.filter((item) => item.model === model);
+    }
+    if (year !== "") {
+      filtered = filtered.filter(
+        (item) => item.year_start <= year && item.year_end >= year
+      );
+    }
+
+    setFilteredInventory(filtered);
+    setCurrentPage(1); // Reinicia a la primera página al aplicar filtros
+  };
+
+  const handleClearFilters = () => {
+    setSelectedBrand("");
+    setSelectedModel("");
+    setSelectedYear("");
+    setFilteredInventory(inventory);
+    setCurrentPage(1); // Reinicia a la primera página al limpiar filtros
   };
 
   const handleLogout = async () => {
@@ -51,14 +128,39 @@ export default function InventoryPage() {
   };
 
   const handleAddItem = async (item: Omit<InventoryItem, "id">) => {
-    const { error } = await supabase.from("botaguas").insert([item]);
+    const uppercasedItem = {
+      ...item,
+      brand: item.brand.toUpperCase(),
+      model: item.model.toUpperCase(),
+    };
+
+    const { error } = await supabase.from("botaguas").insert([uppercasedItem]);
     if (error) {
       console.error("Error adding item:", error.message);
     } else {
-      fetchInventory(); // Actualiza la lista de inventario después de agregar
+      fetchInventory();
       setIsModalOpen(false);
     }
   };
+
+  const totalPages = Math.ceil(filteredInventory.length / ITEMS_PER_PAGE);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prevPage) => prevPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prevPage) => prevPage - 1);
+    }
+  };
+
+  const paginatedData = filteredInventory.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   if (loading) {
     return (
@@ -97,33 +199,77 @@ export default function InventoryPage() {
         />
       )}
 
-      <div className="container mx-auto max-w-4xl p-4 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-semibold text-blue-600 mb-4 text-center">
-          Lista de Inventario
-        </h2>
-        {inventory.length > 0 ? (
-          <ul className="space-y-4">
-            {inventory.map((item) => (
-              <li
-                key={item.id}
-                className="bg-gray-100 p-4 rounded-lg shadow-md"
-              >
-                <p className="font-semibold text-lg">
-                  {item.brand} {item.model}
-                </p>
-                <p>Puertas: {item.doors}</p>
-                <p>Tipo: {item.type}</p>
-                <p>Cantidad: {item.quantity}</p>
-                <p>Descripción: {item.description}</p>
-                <p>Número de Molde: {item.mold_number}</p>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-center text-gray-600">
-            No hay elementos en el inventario.
-          </p>
-        )}
+      {/* Filtros de Marca, Modelo y Año */}
+      <div className="flex space-x-4 mb-6 items-center">
+        <select
+          value={selectedBrand}
+          onChange={handleBrandChange}
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Filtrar por Marca</option>
+          {brands.map((brand) => (
+            <option key={brand} value={brand}>
+              {brand}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedModel}
+          onChange={handleModelChange}
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Filtrar por Modelo</option>
+          {models.map((model) => (
+            <option key={model} value={model}>
+              {model}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedYear}
+          onChange={handleYearChange}
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Filtrar por Año</option>
+          {years.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={handleClearFilters}
+          className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+        >
+          Limpiar Filtros
+        </button>
+      </div>
+
+      {/* Tabla de Inventario Paginada */}
+      <InventoryTable data={paginatedData} />
+
+      {/* Controles de Paginación */}
+      <div className="flex justify-between items-center mt-4">
+        <button
+          onClick={handlePreviousPage}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+        >
+          Anterior
+        </button>
+        <span className="text-gray-700">
+          Página {currentPage} de {totalPages}
+        </span>
+        <button
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+        >
+          Siguiente
+        </button>
       </div>
     </div>
   );
