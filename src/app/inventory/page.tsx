@@ -35,9 +35,8 @@ export default function InventoryPage() {
   const [selectedYear, setSelectedYear] = useState<number | "">("");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
-  const [currentPage, setCurrentPage] = useState(1); // Estado para la página actual
+  const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
   useEffect(() => {
@@ -129,47 +128,42 @@ export default function InventoryPage() {
     router.push("/login");
   };
 
-  const handleAddItem = async (item: Omit<InventoryItem, "id">) => {
-    const uppercasedItem = {
-      ...item,
-      brand: item.brand.toUpperCase(),
-      model: item.model.toUpperCase(),
-    };
+  const handleAddOrUpdateItem = async (
+    item: Omit<InventoryItem, "id"> | InventoryItem
+  ) => {
+    let error;
+    if ("id" in item && item.id) {
+      // Actualización
+      const { error: updateError } = await supabase
+        .from("botaguas")
+        .update(item)
+        .eq("id", item.id);
+      error = updateError;
+    } else {
+      // Creación
+      const uppercasedItem = {
+        ...item,
+        brand: item.brand.toUpperCase(),
+        model: item.model.toUpperCase(),
+      };
+      const { error: insertError } = await supabase
+        .from("botaguas")
+        .insert([uppercasedItem]);
+      error = insertError;
+    }
 
-    const { error } = await supabase.from("botaguas").insert([uppercasedItem]);
     if (error) {
-      console.error("Error adding item:", error.message);
+      console.error("Error submitting form:", error.message);
     } else {
       fetchInventory();
       setIsModalOpen(false);
+      setItemToEdit(null); // Reiniciar item en edición después de crear o actualizar
     }
   };
 
-  const handleDelete = (item: InventoryItem) => {
-    setItemToDelete(item);
-    setIsDeleteConfirmOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (itemToDelete && itemToDelete.id) {
-      const { error } = await supabase
-        .from("botaguas")
-        .delete()
-        .eq("id", itemToDelete.id);
-
-      if (error) {
-        console.error("Error deleting item:", error.message);
-      } else {
-        setIsDeleteConfirmOpen(false);
-        setItemToDelete(null);
-        await fetchInventory();
-      }
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteConfirmOpen(false);
-    setItemToDelete(null);
+  const handleEditItem = (item: InventoryItem) => {
+    setItemToEdit(item);
+    setIsModalOpen(true);
   };
 
   const totalPages = Math.ceil(filteredInventory.length / ITEMS_PER_PAGE);
@@ -223,8 +217,12 @@ export default function InventoryPage() {
 
       {isModalOpen && (
         <AddInventoryForm
-          onSubmit={handleAddItem}
-          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleAddOrUpdateItem}
+          onClose={() => {
+            setIsModalOpen(false);
+            setItemToEdit(null); // Reiniciar el item en edición al cerrar el modal
+          }}
+          item={itemToEdit} // Pasar el item en edición al formulario
         />
       )}
 
@@ -278,32 +276,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Tabla de Inventario Paginada */}
-      <InventoryTable data={paginatedData} onDelete={handleDelete} />
-
-      {/* Modal de Confirmación de Eliminación */}
-      {isDeleteConfirmOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-semibold text-center text-red-600 mb-4">
-              ¿Estás seguro de que deseas eliminar este registro?
-            </h2>
-            <div className="flex justify-center mt-4 space-x-4">
-              <button
-                onClick={confirmDelete}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Eliminar
-              </button>
-              <button
-                onClick={handleCancelDelete}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <InventoryTable data={paginatedData} onEdit={handleEditItem} />
 
       {/* Controles de Paginación */}
       <div className="flex justify-between items-center mt-4">
