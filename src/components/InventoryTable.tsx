@@ -17,10 +17,15 @@ interface InventoryItem {
 
 interface InventoryTableProps {
   data: InventoryItem[];
-  onEdit: (item: InventoryItem) => void; // Prop para manejar la edición
+  onEdit: (item: InventoryItem) => void;
+  onDelete: (item: InventoryItem) => void;
 }
 
-export default function InventoryTable({ data, onEdit }: InventoryTableProps) {
+export default function InventoryTable({
+  data,
+  onEdit,
+  onDelete,
+}: InventoryTableProps) {
   const columns = useMemo(
     () => [
       { Header: "Cantidad", accessor: "quantity" },
@@ -38,16 +43,24 @@ export default function InventoryTable({ data, onEdit }: InventoryTableProps) {
       {
         Header: "Acciones",
         Cell: ({ row }: { row: { original: InventoryItem } }) => (
-          <button
-            onClick={() => onEdit(row.original)}
-            className="text-blue-500 hover:underline"
-          >
-            Actualizar
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => onEdit(row.original)}
+              className="text-blue-500 hover:underline"
+            >
+              Editar
+            </button>
+            <button
+              onClick={() => onDelete(row.original)}
+              className="text-red-500 hover:underline"
+            >
+              Eliminar
+            </button>
+          </div>
         ),
       },
     ],
-    [onEdit]
+    [onEdit, onDelete]
   );
 
   const tableInstance = useTable({ columns, data });
