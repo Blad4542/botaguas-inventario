@@ -140,35 +140,42 @@ export default function InventoryPage() {
   ) => {
     let error;
 
-    const { data: existingItem, error: fetchError } = await supabase
-      .from("botaguas")
-      .select("mold_number")
-      .eq("mold_number", item.mold_number)
-      .single();
-
-    if (fetchError && fetchError.code !== "PGRST116") {
-      console.error("Error fetching existing item:", fetchError.message);
-      return;
-    }
-
-    if (existingItem && (!item.id || existingItem.id !== item.id)) {
-      alert(
-        `El número de molde ${item.mold_number} ya existe. Por favor, ingresa un número de molde diferente.`
-      );
-      return;
-    }
-
     if ("id" in item && item.id) {
+      // Si estamos actualizando, no validamos el mold_number como único
+      const updatedItem = {
+        ...item,
+        year_end: item.year_end || null, // Establecer year_end como null si no se proporciona
+      };
       const { error: updateError } = await supabase
         .from("botaguas")
-        .update(item)
+        .update(updatedItem)
         .eq("id", item.id);
       error = updateError;
     } else {
+      // Si estamos creando un nuevo registro, validamos que el mold_number sea único
+      const { data: existingItem, error: fetchError } = await supabase
+        .from("botaguas")
+        .select("mold_number")
+        .eq("mold_number", item.mold_number)
+        .single();
+
+      if (fetchError && fetchError.code !== "PGRST116") {
+        console.error("Error fetching existing item:", fetchError.message);
+        return;
+      }
+
+      if (existingItem) {
+        alert(
+          `El número de molde ${item.mold_number} ya existe. Por favor, ingresa un número de molde diferente.`
+        );
+        return;
+      }
+
       const uppercasedItem = {
         ...item,
         brand: item.brand.toUpperCase(),
         model: item.model.toUpperCase(),
+        year_end: item.year_end || null, // Establecer year_end como null si no se proporciona
       };
       const { error: insertError } = await supabase
         .from("botaguas")
@@ -211,7 +218,6 @@ export default function InventoryPage() {
       if (error) {
         console.error("Error deleting item:", error.message);
       } else {
-        // Actualizar el estado local sin el item eliminado
         setInventory((prevInventory) =>
           prevInventory.filter((invItem) => invItem.id !== itemToDelete.id)
         );
@@ -314,12 +320,63 @@ export default function InventoryPage() {
         </div>
       )}
 
+      {/* Filtros de Marca, Modelo y Año */}
+      <div className="flex space-x-4 mb-6 items-center">
+        <select
+          value={selectedBrand}
+          onChange={handleBrandChange}
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Filtrar por Marca</option>
+          {brands.map((brand) => (
+            <option key={brand} value={brand}>
+              {brand}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedModel}
+          onChange={handleModelChange}
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Filtrar por Modelo</option>
+          {models.map((model) => (
+            <option key={model} value={model}>
+              {model}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedYear}
+          onChange={handleYearChange}
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="">Filtrar por Año</option>
+          {years.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={handleClearFilters}
+          className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+        >
+          Limpiar Filtros
+        </button>
+      </div>
+
+      {/* Tabla de Inventario Paginada */}
       <InventoryTable
         data={paginatedData}
         onEdit={handleEditItem}
         onDelete={openDeleteModal}
       />
 
+      {/* Controles de Paginación */}
       <div className="flex justify-between items-center mt-4">
         <button
           onClick={handlePreviousPage}
