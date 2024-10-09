@@ -5,7 +5,7 @@ interface InventoryItem {
   brand: string;
   model: string;
   year_start: number;
-  year_end: number;
+  year_end: number | null; // Permitir null en year_end
   doors: number;
   type: string;
   quantity: number;
@@ -28,7 +28,7 @@ export default function AddInventoryForm({
     brand: "",
     model: "",
     year_start: 0,
-    year_end: 0,
+    year_end: null, // Inicializar como null
     doors: 4,
     type: "",
     quantity: 0,
@@ -48,7 +48,10 @@ export default function AddInventoryForm({
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "year_end" && value === "" ? null : value, // Si year_end está vacío, establecer a null
+    }));
   };
 
   const handleSubmit = () => {
@@ -56,12 +59,13 @@ export default function AddInventoryForm({
       !formData.brand ||
       !formData.model ||
       !formData.year_start ||
-      !formData.year_end ||
       !formData.doors ||
       !formData.quantity ||
       !formData.mold_number
     ) {
-      alert("Todos los campos (excepto Descripción) son obligatorios");
+      alert(
+        "Todos los campos (excepto Año Fin y Descripción) son obligatorios"
+      );
       return;
     }
     onSubmit(formData);
@@ -69,7 +73,7 @@ export default function AddInventoryForm({
       brand: "",
       model: "",
       year_start: 0,
-      year_end: 0,
+      year_end: null,
       doors: 4,
       type: "",
       quantity: 0,
@@ -113,12 +117,12 @@ export default function AddInventoryForm({
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
 
-          <label className="block text-gray-700">Hasta</label>
+          <label className="block text-gray-700">Hasta (opcional)</label>
           <input
             type="number"
             name="year_end"
             placeholder="Año Fin"
-            value={formData.year_end}
+            value={formData.year_end ?? ""} // Mostrar vacío si es null
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />

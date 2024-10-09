@@ -6,7 +6,7 @@ interface InventoryItem {
   brand: string;
   model: string;
   year_start: number;
-  year_end: number;
+  year_end: number | null;
   doors: number;
   type: string;
   quantity: number;
@@ -17,7 +17,7 @@ interface InventoryItem {
 interface InventoryTableProps {
   data: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
-  onDelete: (item: InventoryItem) => void;
+  onDelete: (item: InventoryItem) => void; // se asegura que onDelete es una función que se recibe
 }
 
 export default function InventoryTable({
@@ -33,7 +33,10 @@ export default function InventoryTable({
       { Header: "Modelo", accessor: "model" },
       {
         Header: "Año",
-        accessor: (row: InventoryItem) => `${row.year_start} - ${row.year_end}`,
+        accessor: (row: InventoryItem) =>
+          row.year_end
+            ? `${row.year_start} - ${row.year_end}`
+            : `${row.year_start}`, // Mostrar solo year_start si year_end es null
         id: "year_range",
       },
       { Header: "Puertas", accessor: "doors" },
@@ -50,7 +53,7 @@ export default function InventoryTable({
               Editar
             </button>
             <button
-              onClick={() => onDelete(row.original)}
+              onClick={() => onDelete(row.original)} // llamar a onDelete cuando se hace clic en eliminar
               className="text-red-500 hover:underline"
             >
               Eliminar

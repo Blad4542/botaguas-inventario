@@ -11,7 +11,7 @@ interface InventoryItem {
   brand: string;
   model: string;
   year_start: number;
-  year_end: number;
+  year_end: number | null;
   doors: number;
   type: string;
   quantity: number;
@@ -35,6 +35,8 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
@@ -70,11 +72,15 @@ export default function InventoryPage() {
     const uniqueBrands = Array.from(new Set(data.map((item) => item.brand)));
     const uniqueModels = Array.from(new Set(data.map((item) => item.model)));
     const uniqueYears = Array.from(
-      new Set(data.flatMap((item) => [item.year_start, item.year_end]))
+      new Set(
+        data
+          .flatMap((item) => [item.year_start, item.year_end])
+          .filter((year) => year !== null)
+      )
     ).sort((a, b) => b - a);
     setBrands(uniqueBrands);
     setModels(uniqueModels);
-    setYears(uniqueYears);
+    setYears(uniqueYears as number[]);
   };
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -106,7 +112,9 @@ export default function InventoryPage() {
     }
     if (year !== "") {
       filtered = filtered.filter(
-        (item) => item.year_start <= year && item.year_end >= year
+        (item) =>
+          item.year_start <= year &&
+          (item.year_end === null || item.year_end >= year)
       );
     }
 
@@ -132,7 +140,6 @@ export default function InventoryPage() {
   ) => {
     let error;
 
-    // Verificar si el número de molde ya existe en la base de datos
     const { data: existingItem, error: fetchError } = await supabase
       .from("botaguas")
       .select("mold_number")
@@ -140,7 +147,6 @@ export default function InventoryPage() {
       .single();
 
     if (fetchError && fetchError.code !== "PGRST116") {
-      // código que indica que no se encontró el registro
       console.error("Error fetching existing item:", fetchError.message);
       return;
     }
@@ -153,14 +159,12 @@ export default function InventoryPage() {
     }
 
     if ("id" in item && item.id) {
-      // Actualización
       const { error: updateError } = await supabase
         .from("botaguas")
         .update(item)
         .eq("id", item.id);
       error = updateError;
     } else {
-      // Creación
       const uppercasedItem = {
         ...item,
         brand: item.brand.toUpperCase(),
@@ -177,13 +181,50 @@ export default function InventoryPage() {
     } else {
       fetchInventory();
       setIsModalOpen(false);
-      setItemToEdit(null); // Reiniciar item en edición después de crear o actualizar
+      setItemToEdit(null);
     }
   };
 
   const handleEditItem = (item: InventoryItem) => {
     setItemToEdit(item);
     setIsModalOpen(true);
+  };
+
+  const openDeleteModal = (item: InventoryItem) => {
+    setItemToDelete(item);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setItemToDelete(null);
+    setIsDeleteModalOpen(false);
+  };
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("botaguas")
+        .delete()
+        .eq("id", itemToDelete.id);
+      if (error) {
+        console.error("Error deleting item:", error.message);
+      } else {
+        // Actualizar el estado local sin el item eliminado
+        setInventory((prevInventory) =>
+          prevInventory.filter((invItem) => invItem.id !== itemToDelete.id)
+        );
+        setFilteredInventory((prevFilteredInventory) =>
+          prevFilteredInventory.filter(
+            (invItem) => invItem.id !== itemToDelete.id
+          )
+        );
+        closeDeleteModal();
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
   };
 
   const totalPages = Math.ceil(filteredInventory.length / ITEMS_PER_PAGE);
@@ -246,59 +287,39 @@ export default function InventoryPage() {
         />
       )}
 
-      {/* Filtros de Marca, Modelo y Año */}
-      <div className="flex space-x-4 mb-6 items-center">
-        <select
-          value={selectedBrand}
-          onChange={handleBrandChange}
-          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          <option value="">Filtrar por Marca</option>
-          {brands.map((brand) => (
-            <option key={brand} value={brand}>
-              {brand}
-            </option>
-          ))}
-        </select>
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-semibold text-center mb-4">
+              ¿Estás seguro de que quieres eliminar este item?
+            </h2>
+            <p className="text-center mb-6">
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={closeDeleteModal}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteItem}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-        <select
-          value={selectedModel}
-          onChange={handleModelChange}
-          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          <option value="">Filtrar por Modelo</option>
-          {models.map((model) => (
-            <option key={model} value={model}>
-              {model}
-            </option>
-          ))}
-        </select>
+      <InventoryTable
+        data={paginatedData}
+        onEdit={handleEditItem}
+        onDelete={openDeleteModal}
+      />
 
-        <select
-          value={selectedYear}
-          onChange={handleYearChange}
-          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          <option value="">Filtrar por Año</option>
-          {years.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
-
-        <button
-          onClick={handleClearFilters}
-          className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-        >
-          Limpiar Filtros
-        </button>
-      </div>
-
-      {/* Tabla de Inventario Paginada */}
-      <InventoryTable data={paginatedData} onEdit={handleEditItem} />
-
-      {/* Controles de Paginación */}
       <div className="flex justify-between items-center mt-4">
         <button
           onClick={handlePreviousPage}
