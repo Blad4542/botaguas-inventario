@@ -40,19 +40,6 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push("/login");
-      } else {
-        await fetchInventory();
-      }
-      setLoading(false);
-    };
-    checkAuth();
-  }, [router]);
-
   const fetchInventory = async () => {
     try {
       const { data, error } = await supabase.from("botaguas").select("*");
@@ -67,6 +54,19 @@ export default function InventoryPage() {
       console.error("Unexpected error:", error);
     }
   };
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.push("/login");
+      } else {
+        await fetchInventory();
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, [router, fetchInventory]);
 
   const extractFilters = (data: InventoryItem[]) => {
     const uniqueBrands = Array.from(new Set(data.map((item) => item.brand)));

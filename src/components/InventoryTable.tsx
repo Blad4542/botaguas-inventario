@@ -17,7 +17,7 @@ interface InventoryItem {
 interface InventoryTableProps {
   data: InventoryItem[];
   onEdit: (item: InventoryItem) => void;
-  onDelete: (item: InventoryItem) => void; // se asegura que onDelete es una función que se recibe
+  onDelete: (item: InventoryItem) => void;
 }
 
 export default function InventoryTable({
@@ -36,7 +36,7 @@ export default function InventoryTable({
         accessor: (row: InventoryItem) =>
           row.year_end
             ? `${row.year_start} - ${row.year_end}`
-            : `${row.year_start}`, // Mostrar solo year_start si year_end es null
+            : `${row.year_start}`,
         id: "year_range",
       },
       { Header: "Puertas", accessor: "doors" },
@@ -49,12 +49,14 @@ export default function InventoryTable({
             <button
               onClick={() => onEdit(row.original)}
               className="text-blue-500 hover:underline"
+              key={`edit-${row.original.id}`}
             >
               Editar
             </button>
             <button
-              onClick={() => onDelete(row.original)} // llamar a onDelete cuando se hace clic en eliminar
+              onClick={() => onDelete(row.original)}
               className="text-red-500 hover:underline"
+              key={`delete-${row.original.id}`}
             >
               Eliminar
             </button>
@@ -77,9 +79,10 @@ export default function InventoryTable({
       >
         <thead className="bg-blue-500">
           {headerGroups.map((headerGroup) => (
-            <tr {...headerGroup.getHeaderGroupProps()}>
+            <tr key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column) => (
                 <th
+                  key={column.id}
                   {...column.getHeaderProps()}
                   className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
                 >
@@ -93,9 +96,10 @@ export default function InventoryTable({
           {rows.map((row) => {
             prepareRow(row);
             return (
-              <tr {...row.getRowProps()}>
+              <tr key={row.id} {...row.getRowProps()}>
                 {row.cells.map((cell) => (
                   <td
+                    key={cell.column.id}
                     {...cell.getCellProps()}
                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                   >
