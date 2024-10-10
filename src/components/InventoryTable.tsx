@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useTable } from "react-table";
+import { useTable, Column } from "react-table";
 
 interface InventoryItem {
   id: number;
@@ -25,12 +25,12 @@ export default function InventoryTable({
   onEdit,
   onDelete,
 }: InventoryTableProps) {
-  const columns = useMemo(
+  const columns: Column<InventoryItem>[] = useMemo(
     () => [
-      { Header: "Cantidad", accessor: "quantity" },
-      { Header: "Molde", accessor: "mold_number" },
-      { Header: "Marca", accessor: "brand" },
-      { Header: "Modelo", accessor: "model" },
+      { Header: "Cantidad", accessor: "quantity" as const },
+      { Header: "Molde", accessor: "mold_number" as const },
+      { Header: "Marca", accessor: "brand" as const },
+      { Header: "Modelo", accessor: "model" as const },
       {
         Header: "Año",
         accessor: (row: InventoryItem) =>
@@ -39,9 +39,9 @@ export default function InventoryTable({
             : `${row.year_start}`,
         id: "year_range",
       },
-      { Header: "Puertas", accessor: "doors" },
-      { Header: "Tipo", accessor: "type" },
-      { Header: "Descripción", accessor: "description" },
+      { Header: "Puertas", accessor: "doors" as const },
+      { Header: "Tipo", accessor: "type" as const },
+      { Header: "Descripción", accessor: "description" as const },
       {
         Header: "Acciones",
         Cell: ({ row }: { row: { original: InventoryItem } }) => (
@@ -49,14 +49,12 @@ export default function InventoryTable({
             <button
               onClick={() => onEdit(row.original)}
               className="text-blue-500 hover:underline"
-              key={`edit-${row.original.id}`}
             >
               Editar
             </button>
             <button
               onClick={() => onDelete(row.original)}
               className="text-red-500 hover:underline"
-              key={`delete-${row.original.id}`}
             >
               Eliminar
             </button>
@@ -79,10 +77,9 @@ export default function InventoryTable({
       >
         <thead className="bg-blue-500">
           {headerGroups.map((headerGroup) => (
-            <tr key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
+            <tr {...headerGroup.getHeaderGroupProps()}>
               {headerGroup.headers.map((column) => (
                 <th
-                  key={column.id}
                   {...column.getHeaderProps()}
                   className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
                 >
@@ -96,10 +93,9 @@ export default function InventoryTable({
           {rows.map((row) => {
             prepareRow(row);
             return (
-              <tr key={row.id} {...row.getRowProps()}>
+              <tr {...row.getRowProps()}>
                 {row.cells.map((cell) => (
                   <td
-                    key={cell.column.id}
                     {...cell.getCellProps()}
                     className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                   >
