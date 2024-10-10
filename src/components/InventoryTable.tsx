@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useTable, Column } from "react-table";
 
+/* eslint-disable react/jsx-key */
+
 interface InventoryItem {
   id: number;
   brand: string;
