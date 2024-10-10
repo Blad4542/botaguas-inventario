@@ -289,7 +289,7 @@ export default function InventoryPage() {
             setIsModalOpen(false);
             setItemToEdit(null);
           }}
-          item={itemToEdit}
+          item={itemToEdit || undefined}
         />
       )}
 
