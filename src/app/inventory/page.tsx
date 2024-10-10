@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../supabaseClient";
 import { useRouter } from "next/navigation";
 import AddInventoryForm from "@/components/AddInventoryForm";
@@ -40,34 +40,6 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
-  const fetchInventory = async () => {
-    try {
-      const { data, error } = await supabase.from("botaguas").select("*");
-      if (error) {
-        console.error("Error fetching inventory:", error.message);
-      } else if (data) {
-        setInventory(data as InventoryItem[]);
-        setFilteredInventory(data as InventoryItem[]);
-        extractFilters(data as InventoryItem[]);
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    }
-  };
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push("/login");
-      } else {
-        await fetchInventory();
-      }
-      setLoading(false);
-    };
-    checkAuth();
-  }, [router, fetchInventory]);
-
   const extractFilters = (data: InventoryItem[]) => {
     const uniqueBrands = Array.from(new Set(data.map((item) => item.brand)));
     const uniqueModels = Array.from(new Set(data.map((item) => item.model)));
@@ -82,6 +54,34 @@ export default function InventoryPage() {
     setModels(uniqueModels);
     setYears(uniqueYears as number[]);
   };
+
+  const fetchInventory = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from("botaguas").select("*");
+      if (error) {
+        console.error("Error fetching inventory:", error.message);
+      } else if (data) {
+        setInventory(data as InventoryItem[]);
+        setFilteredInventory(data as InventoryItem[]);
+        extractFilters(data as InventoryItem[]);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
+  }, [setInventory, setFilteredInventory, extractFilters]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.push("/login");
+      } else {
+        await fetchInventory();
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, [router, fetchInventory]);
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const brand = e.target.value;
