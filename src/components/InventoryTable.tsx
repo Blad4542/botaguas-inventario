@@ -75,7 +75,7 @@ export default function InventoryTable({
     <div className="overflow-x-auto w-full">
       <table
         {...getTableProps()}
-        className="min-w-full bg-white rounded-lg shadow-lg"
+        className="min-w-full bg-white rounded-lg shadow-lg table-fixed"
       >
         <thead className="bg-blue-500">
           {headerGroups.map((headerGroup) => (
@@ -83,7 +83,7 @@ export default function InventoryTable({
               {headerGroup.headers.map((column) => (
                 <th
                   {...column.getHeaderProps()}
-                  className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
+                  className="px-2 sm:px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider"
                 >
                   {column.render("Header")}
                 </th>
@@ -95,11 +95,14 @@ export default function InventoryTable({
           {rows.map((row) => {
             prepareRow(row);
             return (
-              <tr {...row.getRowProps()}>
+              <tr
+                {...row.getRowProps()}
+                className="hover:bg-gray-100 transition-colors"
+              >
                 {row.cells.map((cell) => (
                   <td
                     {...cell.getCellProps()}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    className="px-2 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                   >
                     {cell.render("Cell")}
                   </td>

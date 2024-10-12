@@ -5,7 +5,7 @@ interface InventoryItem {
   brand: string;
   model: string;
   year_start: number;
-  year_end: number | null; // Permitir null en year_end
+  year_end: number | null;
   doors: number;
   type: string;
   quantity: number;
@@ -28,7 +28,7 @@ export default function AddInventoryForm({
     brand: "",
     model: "",
     year_start: 0,
-    year_end: null, // Inicializar como null
+    year_end: null,
     doors: 4,
     type: "",
     quantity: 0,
@@ -50,7 +50,7 @@ export default function AddInventoryForm({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "year_end" && value === "" ? null : value, // Si year_end está vacío, establecer a null
+      [name]: name === "year_end" && value === "" ? null : value,
     }));
   };
 
@@ -84,8 +84,8 @@ export default function AddInventoryForm({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10 p-4 sm:p-8">
-      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-screen overflow-y-auto">
-        <h2 className="text-xl font-semibold text-center text-blue-600 mb-4">
+      <div className="bg-white p-4 sm:p-6 md:p-8 rounded-lg shadow-lg w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl max-h-screen overflow-y-auto">
+        <h2 className="text-lg sm:text-xl font-semibold text-center text-blue-600 mb-4">
           {item ? "Actualizar Item" : "Agregar Nuevo Item"}
         </h2>
         <form className="space-y-4">
@@ -122,7 +122,7 @@ export default function AddInventoryForm({
             type="number"
             name="year_end"
             placeholder="Año Fin"
-            value={formData.year_end ?? ""} // Mostrar vacío si es null
+            value={formData.year_end ?? ""}
             onChange={handleInputChange}
             className="w-full p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
           />

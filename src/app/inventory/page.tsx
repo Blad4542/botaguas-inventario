@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../../supabaseClient";
 import { useRouter } from "next/navigation";
 import AddInventoryForm from "@/components/AddInventoryForm";
@@ -40,6 +40,34 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
+  const fetchInventory = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from("botaguas").select("*");
+      if (error) {
+        console.error("Error fetching inventory:", error.message);
+      } else if (data) {
+        setInventory(data as InventoryItem[]);
+        setFilteredInventory(data as InventoryItem[]);
+        extractFilters(data as InventoryItem[]);
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        router.push("/login");
+      } else {
+        await fetchInventory();
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, [router, fetchInventory]);
+
   const extractFilters = (data: InventoryItem[]) => {
     const uniqueBrands = Array.from(new Set(data.map((item) => item.brand)));
     const uniqueModels = Array.from(new Set(data.map((item) => item.model)));
@@ -54,34 +82,6 @@ export default function InventoryPage() {
     setModels(uniqueModels);
     setYears(uniqueYears as number[]);
   };
-
-  const fetchInventory = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.from("botaguas").select("*");
-      if (error) {
-        console.error("Error fetching inventory:", error.message);
-      } else if (data) {
-        setInventory(data as InventoryItem[]);
-        setFilteredInventory(data as InventoryItem[]);
-        extractFilters(data as InventoryItem[]);
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-    }
-  }, [setInventory, setFilteredInventory, extractFilters]);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push("/login");
-      } else {
-        await fetchInventory();
-      }
-      setLoading(false);
-    };
-    checkAuth();
-  }, [router, fetchInventory]);
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const brand = e.target.value;
@@ -141,18 +141,13 @@ export default function InventoryPage() {
     let error;
 
     if ("id" in item && item.id) {
-      // Si estamos actualizando, no validamos el mold_number como único
-      const updatedItem = {
-        ...item,
-        year_end: item.year_end || null, // Establecer year_end como null si no se proporciona
-      };
+      const updatedItem = { ...item, year_end: item.year_end || null };
       const { error: updateError } = await supabase
         .from("botaguas")
         .update(updatedItem)
         .eq("id", item.id);
       error = updateError;
     } else {
-      // Si estamos creando un nuevo registro, validamos que el mold_number sea único
       const { data: existingItem, error: fetchError } = await supabase
         .from("botaguas")
         .select("mold_number")
@@ -175,7 +170,7 @@ export default function InventoryPage() {
         ...item,
         brand: item.brand.toUpperCase(),
         model: item.model.toUpperCase(),
-        year_end: item.year_end || null, // Establecer year_end como null si no se proporciona
+        year_end: item.year_end || null,
       };
       const { error: insertError } = await supabase
         .from("botaguas")
@@ -261,12 +256,12 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 p-6">
-      <header className="flex items-center justify-between p-4 bg-white shadow-lg rounded-lg mb-6">
-        <h1 className="text-xl font-bold text-blue-600">
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-blue-100 p-4 sm:p-6">
+      <header className="flex flex-col sm:flex-row items-center justify-between p-4 bg-white shadow-lg rounded-lg mb-4 sm:mb-6 space-y-2 sm:space-y-0">
+        <h1 className="text-lg sm:text-xl font-bold text-blue-600 text-center sm:text-left">
           Inventario de Botaguas
         </h1>
-        <div className="space-x-4">
+        <div className="flex space-x-2">
           <button
             onClick={() => setIsModalOpen(true)}
             className="text-sm bg-green-500 text-white py-1 px-3 rounded-lg hover:bg-green-600 transition-colors"
@@ -289,29 +284,25 @@ export default function InventoryPage() {
             setIsModalOpen(false);
             setItemToEdit(null);
           }}
-          item={itemToEdit || undefined}
+          item={itemToEdit}
         />
       )}
 
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
-            <h2 className="text-lg font-semibold text-center mb-4">
-              ¿Estás seguro de que quieres eliminar este item?
-            </h2>
-            <p className="text-center mb-6">
-              Esta acción no se puede deshacer.
-            </p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-xs w-full text-center">
+            <h2 className="text-lg font-semibold mb-4">¿Eliminar este item?</h2>
+            <p className="mb-6 text-sm">Esta acción no se puede deshacer.</p>
             <div className="flex justify-center space-x-4">
               <button
                 onClick={closeDeleteModal}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDeleteItem}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
               >
                 Eliminar
               </button>
@@ -320,12 +311,11 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Filtros de Marca, Modelo y Año */}
-      <div className="flex space-x-4 mb-6 items-center">
+      <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mb-4 items-center">
         <select
           value={selectedBrand}
           onChange={handleBrandChange}
-          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-auto"
         >
           <option value="">Filtrar por Marca</option>
           {brands.map((brand) => (
@@ -338,7 +328,7 @@ export default function InventoryPage() {
         <select
           value={selectedModel}
           onChange={handleModelChange}
-          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-auto"
         >
           <option value="">Filtrar por Modelo</option>
           {models.map((model) => (
@@ -351,7 +341,7 @@ export default function InventoryPage() {
         <select
           value={selectedYear}
           onChange={handleYearChange}
-          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="p-2 border rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-auto"
         >
           <option value="">Filtrar por Año</option>
           {years.map((year) => (
@@ -363,20 +353,18 @@ export default function InventoryPage() {
 
         <button
           onClick={handleClearFilters}
-          className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+          className="p-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors w-full sm:w-auto"
         >
           Limpiar Filtros
         </button>
       </div>
 
-      {/* Tabla de Inventario Paginada */}
       <InventoryTable
         data={paginatedData}
         onEdit={handleEditItem}
         onDelete={openDeleteModal}
       />
 
-      {/* Controles de Paginación */}
       <div className="flex justify-between items-center mt-4">
         <button
           onClick={handlePreviousPage}
@@ -385,7 +373,7 @@ export default function InventoryPage() {
         >
           Anterior
         </button>
-        <span className="text-gray-700">
+        <span className="text-gray-700 text-xs sm:text-base">
           Página {currentPage} de {totalPages}
         </span>
         <button
