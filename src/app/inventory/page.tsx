@@ -34,7 +34,7 @@ export default function InventoryPage() {
   const [selectedYear, setSelectedYear] = useState<number | "">("");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [itemToEdit, setItemToEdit] = useState<InventoryItem | null>(null);
+  const [itemToEdit, setItemToEdit] = useState<InventoryItem | undefined>(); // Cambiado a undefined
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -183,7 +183,7 @@ export default function InventoryPage() {
     } else {
       fetchInventory();
       setIsModalOpen(false);
-      setItemToEdit(null);
+      setItemToEdit(undefined); // Cambiado a undefined
     }
   };
 
@@ -282,9 +282,9 @@ export default function InventoryPage() {
           onSubmit={handleAddOrUpdateItem}
           onClose={() => {
             setIsModalOpen(false);
-            setItemToEdit(null);
+            setItemToEdit(undefined);
           }}
-          item={itemToEdit}
+          item={itemToEdit} // Ahora es undefined en lugar de null
         />
       )}
 
