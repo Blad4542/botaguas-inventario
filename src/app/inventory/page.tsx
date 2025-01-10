@@ -1,5 +1,5 @@
 "use client";
-
+import { jwtDecode } from "jwt-decode";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../../supabaseClient";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ interface InventoryItem {
   quantity: number;
   description: string;
   mold_number: string;
+  user_name: string;
 }
 
 const ITEMS_PER_PAGE = 25;
@@ -38,6 +39,7 @@ export default function InventoryPage() {
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [user, setUser] = useState(null);
   const router = useRouter();
 
   const fetchInventory = useCallback(async () => {
@@ -61,6 +63,9 @@ export default function InventoryPage() {
       if (!data.session) {
         router.push("/login");
       } else {
+        const decoded = jwtDecode(data.session.access_token);
+        console.log(decoded);
+        setUser(decoded.email);
         await fetchInventory();
       }
       setLoading(false);
@@ -141,7 +146,11 @@ export default function InventoryPage() {
     let error;
 
     if ("id" in item && item.id) {
-      const updatedItem = { ...item, year_end: item.year_end || null };
+      const updatedItem = {
+        ...item,
+        year_end: item.year_end,
+        user_name: user || null,
+      };
       const { error: updateError } = await supabase
         .from("botaguas")
         .update(updatedItem)
@@ -170,7 +179,8 @@ export default function InventoryPage() {
         ...item,
         brand: item.brand.toUpperCase(),
         model: item.model.toUpperCase(),
-        year_end: item.year_end || null,
+        year_end: item.year_end,
+        user_name: user.toUpperCase() || null,
       };
       const { error: insertError } = await supabase
         .from("botaguas")
