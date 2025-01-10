@@ -20,6 +20,10 @@ interface InventoryItem {
   user_name: string;
 }
 
+interface DecodedToken {
+  email: string;
+}
+
 const ITEMS_PER_PAGE = 25;
 
 export default function InventoryPage() {
@@ -39,7 +43,7 @@ export default function InventoryPage() {
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchInventory = useCallback(async () => {
@@ -63,8 +67,7 @@ export default function InventoryPage() {
       if (!data.session) {
         router.push("/login");
       } else {
-        const decoded = jwtDecode(data.session.access_token);
-        console.log(decoded);
+        const decoded = jwtDecode<DecodedToken>(data.session.access_token);
         setUser(decoded.email);
         await fetchInventory();
       }
@@ -180,7 +183,7 @@ export default function InventoryPage() {
         brand: item.brand.toUpperCase(),
         model: item.model.toUpperCase(),
         year_end: item.year_end,
-        user_name: user.toUpperCase() || null,
+        user_name: user?.toUpperCase() || null,
       };
       const { error: insertError } = await supabase
         .from("botaguas")
