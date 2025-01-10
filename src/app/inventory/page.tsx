@@ -143,7 +143,7 @@ export default function InventoryPage() {
     router.push("/login");
   };
 
-  const handleAddOrUpdateItem = async (
+  const handleAddOrUpdateItem: any = async (
     item: Omit<InventoryItem, "id"> | InventoryItem
   ) => {
     let error;
@@ -200,17 +200,16 @@ export default function InventoryPage() {
     }
   };
 
-  const handleEditItem = (item: InventoryItem) => {
+  const handleEditItem: any = (item: InventoryItem) => {
     setItemToEdit(item);
     setIsModalOpen(true);
   };
-
-  const openDeleteModal = (item: InventoryItem) => {
+  const openDeleteModal: any = (item: InventoryItem) => {
     setItemToDelete(item);
     setIsDeleteModalOpen(true);
   };
 
-  const closeDeleteModal = () => {
+  const closeDeleteModal: any = () => {
     setItemToDelete(null);
     setIsDeleteModalOpen(false);
   };
